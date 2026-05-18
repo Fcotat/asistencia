@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Credenciales QR - Servicios Educativos</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
+
+    <header class="bg-slate-800 border-b border-slate-700 text-center py-4 shadow-lg">
+        <h1 class="text-xl font-bold tracking-wider text-blue-400">ESTACIÓN DE CONTROL DE ASISTENCIA</h1>
+        <p class="text-xs text-slate-400 mt-1">Departamento de Servicios Educativos | Dispositivo Fijo</p>
+    </header>
+
+    <main class="flex-grow flex flex-col md:flex-row items-center justify-center p-6 gap-6 max-w-6xl mx-auto w-full">
+        
+        <div class="bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 flex flex-col items-center">
+            <div class="w-full text-center mb-3">
+                <h2 class="text-md font-semibold text-slate-300 flex items-center justify-center gap-2">
+                    <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                    Cámara del Dispositivo
+                </h2>
+                <p class="text-xs text-slate-500">Muestre el código QR de la credencial frente al lente</p>
+            </div>
+            
+            <div id="lector-qr" class="w-full overflow-hidden rounded-xl bg-slate-950 border-2 border-dashed border-slate-700 aspect-square flex items-center justify-center relative">
+                <div id="mensaje-carga" class="text-center p-4 z-10">
+                    <span class="text-4xl block mb-2">📷</span>
+                    <p class="text-sm text-slate-400 font-medium">Esperando permisos de la cámara...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 h-[450px] flex flex-col justify-between">
+            
+            <div id="panel-resultado" class="bg-slate-950 p-5 rounded-xl border border-slate-700 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300">
+                <div id="estado-icono" class="text-5xl mb-3">🔲</div>
+                <h3 id="estado-titulo" class="text-lg font-bold text-slate-400">Sistema Listo</h3>
+                <p id="estado-detalle" class="text-sm text-slate-500 mt-1 text-balance">Presente una credencial para iniciar el registro diario.</p>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-700 flex flex-col gap-2">
+                <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>Acción en servidor:</span>
+                    <span class="font-mono text-blue-400" id="reloj-servidor">00:00:00</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="bg-slate-900 p-2 rounded border border-slate-700">
+                        <span class="text-slate-500 block">Tutor Encontrado:</span>
+                        <span id="log-telefono" class="font-mono text-slate-300">Ninguno</span>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded border border-slate-700">
+                        <span class="text-slate-500 block">Estatus Mensaje:</span>
+                        <span id="log-status" class="font-semibold text-slate-500">Inactivo</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-slate-950 text-center py-3 text-xs text-slate-600 border-t border-slate-800">
+        Control de Acceso Escolar Centralizado · Alojado en GitHub Pages de forma segura
+    </footer>
+
+    <script>
+        // Actualizar reloj del sistema en tiempo real
+        setInterval(() => {
+            document.getElementById('reloj-servidor').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        // Configuración e inicio del escáner de QR
+        function inicializarEscaner() {
+            const html5QrcodeScanner = new Html5Qrcode("lector-qr");
+            
+            // Configuración del lector (250px la caja de enfoque central, 10 cuadros de procesamiento por segundo)
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+            // Iniciar la cámara. Usa "environment" para la cámara trasera o "user" si usas la cámara frontal de una tableta.
+            html5QrcodeScanner.start(
+                { facingMode: "environment" }, 
+                config,
+                onQrScanSuccess,
+                onQrScanFailure
+            ).then(() => {
+                document.getElementById("mensaje-carga").style.display = "none";
+            }).catch(err => {
+                console.error("Error al iniciar la cámara:", err);
+                document.getElementById("mensaje-carga").innerHTML = `
+                    <span class="text-red-500 text-3xl block mb-2">⚠️</span>
+                    <p class="text-xs text-red-400">Error de cámara o permisos denegados.</p>
+                `;
+            });
+        }
+
+        // Variable de bloqueo para evitar lecturas consecutivas del mismo alumno
+        let bloqueado = false;
+
+        // Qué pasa cuando el software detecta un código QR
+        function onQrScanSuccess(decodedText, decodedResult) {
+            if (bloqueado) return; 
+            bloqueado = true;
+
+            // Extraemos el texto limpio del QR (Matrícula)
+            const matriculaDetectada = decodedText.trim().toUpperCase();
+            
+            procesarAsistenciaAlumno(matriculaDetectada);
+
+            // Volver a habilitar la cámara para el siguiente alumno en la fila tras 4 segundos
+            setTimeout(() => {
+                resetearPantallaLector();
+                bloqueado = false;
+            }, 4000);
+        }
+
+        function onQrScanFailure(error) {
+            // Se deja vacío de manera intencional para no alentar el navegador con registros innecesarios
+        }
+
+        // Simulación de conexión a base de datos y mensajería
+        function procesarAsistenciaAlumno(matricula) {
+            const panel = document.getElementById("panel-resultado");
+            const icono = document.getElementById("estado-icono");
+            const titulo = document.getElementById("estado-titulo");
+            const detalle = document.getElementById("estado-detalle");
+            
+            const logTelefono = document.getElementById("log-telefono");
+            const logStatus = document.getElementById("log-status");
+
+            // Define automáticamente si es Entrada o Salida según la hora (Antes de las 12 PM = Entrada)
+            const hora = new Date().getHours();
+            const tipoEvento = (hora < 12) ? "ENTRADA" : "SALIDA";
+            const horaBonita = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            // CAMBIO VISUAL DE ÉXITO: El panel se vuelve verde brillante e informa al operador
+            panel.className = "bg-emerald-950 p-5 rounded-xl border border-emerald-500 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300";
+            icono.innerText = "✅";
+            titulo.innerText = "¡ASISTENCIA REGISTRADA!";
+            titulo.className = "text-xl font-bold text-emerald-400";
+            detalle.innerHTML = `Matrícula: <strong class="font-mono text-white">${matricula}</strong><br>Acceso: <strong class="text-white">${tipoEvento}</strong> a las ${horaBonita}`;
+
+            // Simulación de la respuesta de red (Encontró al papá y mandó la alerta)
+            logTelefono.innerText = "Padre Registrado ✓"; 
+            logStatus.innerText = "SMS/WA ENVIADO";
+            logStatus.className = "font-semibold text-emerald-400";
+
+            // AQUÍ EN LA FASE SIGUIENTE: Conectarás este gatillo a tu backend real con un fetch
+            /*
+            fetch('https://tu-servidor.com/asistencia', {
+                method: 'POST',
+                body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
+            });
+            */
+        }
+
+        // Regresar el panel al estado de espera original
+        function resetearPantallaLector() {
+            const panel = document.getElementById("panel-resultado");
+            const icono = document.getElementById("estado-icono");
+            const titulo = document.getElementById("estado-titulo");
+            const detalle = document.getElementById("estado-detalle");
+
+            panel.className = "bg-slate-950 p-5 rounded-xl border border-slate-700 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300";
+            icono.innerText = "🔲";
+            titulo.innerText = "Sistema Listo";
+            titulo.className = "text-lg font-bold text-slate-400";
+            detalle.innerText = "Presente una credencial para iniciar el registro diario.";
+        }
+
+        // Arrancar la lógica al terminar de cargar el HTML
+        window.onload = inicializarEscaner;
+    </script>
+</body>
+</html>
