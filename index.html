@@ -3,73 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lector de Credenciales QR - Servicios Educativos</title>
+    <title>Sistema de Control de Asistencia - Secundarias Técnicas</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Librería con respaldo de seguridad global -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
-    <header class="bg-slate-800 border-b border-slate-700 text-center py-4 shadow-lg">
-        <h1 class="text-xl font-bold tracking-wider text-blue-400">ESTACIÓN DE CONTROL DE ASISTENCIA</h1>
-        <p class="text-xs text-slate-400 mt-1">Departamento de Servicios Educativos | Control de Video</p>
-    </header>
-
-    <main class="flex-grow flex flex-col md:flex-row items-center justify-center p-6 gap-6 max-w-6xl mx-auto w-full">
-        
-        <!-- PANEL DE CONTROL (CÁMARA Y TECLADO) -->
-        <div class="bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 flex flex-col items-center">
-            <div class="w-full text-center mb-3">
-                <h2 class="text-md font-semibold text-slate-300 flex items-center justify-center gap-2">
-                    <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                    Vídeo en Tiempo Real
-                </h2>
-                <p class="text-xs text-slate-500">Prioridad: Cámara trasera (Celular/Tableta)</p>
+    <!-- ENCABEZADO INSTITUCIONAL (GUINDA Y BLANCO) -->
+    <header class="bg-[#6B1F38] border-b-4 border-[#1E3A8A] text-center py-4 shadow-2xl relative">
+        <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <!-- Contenedor del Logo de Secundarias Técnicas (Alineación limpia) -->
+            <div class="bg-white p-1.5 rounded-full shadow-md flex items-center justify-center w-16 h-16 shrink-0">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/47/Logotipo_de_las_Secundarias_T%C3%A9cnicas.png" 
+                     alt="Logo Secundarias Técnicas" 
+                     class="w-full h-full object-contain"
+                     onerror="this.src='https://img.icons8.com/color/96/school.png'">
             </div>
             
-            <!-- Contenedor del Escáner -->
-            <div id="lector-qr" class="w-full overflow-hidden rounded-xl bg-slate-950 border-2 border-dashed border-slate-700 aspect-square flex items-center justify-center relative mb-4">
+            <div class="text-center sm:text-left">
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-wider text-white uppercase drop-shadow">
+                    ESCUELA SECUNDARIA TÉCNICA
+                </h1>
+                <p class="text-xs sm:text-sm font-semibold text-slate-200 tracking-wide uppercase">
+                    Sistema Digital de Control de Acceso y Asistencia Escolar
+                </p>
+            </div>
+        </div>
+        <!-- Línea delgada azul de acento tecnológico debajo del guinda -->
+        <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-600"></div>
+    </header>
+
+    <!-- CUERPO PRINCIPAL -->
+    <main class="flex-grow flex flex-col md:flex-row items-center justify-center p-4 sm:p-6 gap-6 max-w-6xl mx-auto w-full">
+        
+        <!-- PANEL DE CONTROL: CÁMARA (TOQUES AZULES Y GUINDAS) -->
+        <div class="bg-slate-900 p-4 rounded-2xl shadow-2xl border border-slate-800 w-full md:w-1/2 flex flex-col items-center">
+            <div class="w-full text-center mb-3">
+                <h2 class="text-md font-bold text-slate-300 flex items-center justify-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                    MONITOR DE VIDEO EN TIEMPO REAL
+                </h2>
+                <p class="text-xs text-slate-500">Prioridad automática: Cámara trasera en móviles</p>
+            </div>
+            
+            <!-- Contenedor del Escáner (Borde dashed azul institucional) -->
+            <div id="lector-qr" class="w-full overflow-hidden rounded-xl bg-slate-950 border-2 border-dashed border-blue-900 aspect-square flex items-center justify-center relative mb-4 shadow-inner">
                 <div id="mensaje-carga" class="text-center p-4 z-10">
                     <span class="text-4xl block mb-2">📷</span>
-                    <p id="texto-alerta" class="text-sm text-slate-400 font-medium">Iniciando sistema de vídeo...</p>
-                    <button onclick="forzarEncendidoCamara()" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg">
-                        🔋 Encender Cámara Manual
+                    <p id="texto-alerta" class="text-sm text-slate-400 font-medium">Estación de video lista para iniciar...</p>
+                    <button onclick="forzarEncendidoCamara()" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg cursor-pointer">
+                        🔋 Activar Cámara Manual
                     </button>
                 </div>
             </div>
 
-            <!-- CUADRO DE ENTRADA MANUAL (Respaldo por teclado) -->
-            <div class="w-full bg-slate-900 p-3 rounded-xl border border-slate-700">
-                <label class="block text-xs text-slate-400 mb-1 font-medium">Entrada por Teclado de Respaldo:</label>
+            <!-- ENTRADA MANUAL DE RESPALDO (CON ENFOQUE AZUL) -->
+            <div class="w-full bg-slate-950 p-3 rounded-xl border border-slate-800 shadow-md">
+                <label class="block text-xs text-slate-400 mb-1 font-bold uppercase tracking-wider">Teclado de Respaldo:</label>
                 <div class="flex gap-2">
-                    <input type="text" id="input-manual" placeholder="Ej: TEST-123" class="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm font-mono text-blue-400 flex-grow focus:outline-none focus:border-blue-500">
-                    <button onclick="registrarManual()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-semibold uppercase tracking-wider transition-colors">Enviar</button>
+                    <input type="text" id="input-manual" placeholder="DIGITE MATRÍCULA AQUÍ..." class="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm font-mono text-blue-400 flex-grow focus:outline-none focus:border-blue-500 uppercase tracking-widest text-center">
+                    <button onclick="registrarManual()" class="bg-[#1E3A8A] hover:bg-blue-700 text-white px-5 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors shadow-md cursor-pointer">Enviar</button>
                 </div>
             </div>
         </div>
 
-        <!-- PANEL DE RESULTADOS -->
-        <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 h-[520px] flex flex-col justify-between">
+        <!-- PANEL DE RESULTADOS EN TIEMPO REAL -->
+        <div class="bg-slate-900 p-6 rounded-2xl shadow-2xl border border-slate-800 w-full md:w-1/2 h-[520px] flex flex-col justify-between">
             
-            <div id="panel-resultado" class="bg-slate-950 p-5 rounded-xl border border-slate-700 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300">
-                <div id="estado-icono" class="text-5xl mb-3">🔲</div>
-                <h3 id="estado-titulo" class="text-lg font-bold text-slate-400">Sistema Listo</h3>
-                <p id="estado-detalle" class="text-sm text-slate-500 mt-1 text-balance">Active la cámara o digite una matrícula para registrar.</p>
+            <!-- Pantalla de estatus dinámica -->
+            <div id="panel-resultado" class="bg-slate-950 p-5 rounded-xl border border-slate-800 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300 shadow-inner">
+                <div id="estado-icono" class="text-6xl mb-3">🔲</div>
+                <h3 id="estado-titulo" class="text-lg font-bold text-slate-400 uppercase tracking-wide">Terminal en Espera</h3>
+                <p id="estado-detalle" class="text-sm text-slate-500 mt-2 text-balance">Presente una credencial con código QR frente al lente o use el teclado.</p>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-slate-700 flex flex-col gap-2">
-                <div class="flex justify-between items-center text-xs text-slate-400 mb-1">
-                    <span>Acción en servidor:</span>
-                    <span class="font-mono text-blue-400" id="reloj-servidor">00:00:00</span>
+            <!-- LOGS DEL SERVIDOR Y NOTIFICACIONES -->
+            <div class="mt-4 pt-4 border-t border-slate-800 flex flex-col gap-2">
+                <div class="flex justify-between items-center text-xs text-slate-400 mb-1 font-medium">
+                    <span>RELOJ DE LA ESTACIÓN:</span>
+                    <span class="font-mono text-blue-400 font-bold text-sm bg-slate-950 px-2 py-0.5 rounded border border-slate-800" id="reloj-servidor">00:00:00</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-slate-900 p-2 rounded border border-slate-700">
-                        <span class="text-slate-500 block">Tutor Encontrado:</span>
-                        <span id="log-telefono" class="font-mono text-slate-300">Ninguno</span>
+                    <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span class="text-slate-500 block font-bold uppercase text-[10px]">Notificación Tutor:</span>
+                        <span id="log-telefono" class="font-mono text-slate-300 font-medium">Ninguno en cola</span>
                     </div>
-                    <div class="bg-slate-900 p-2 rounded border border-slate-700">
-                        <span class="text-slate-500 block">Estatus Mensaje:</span>
-                        <span id="log-status" class="font-semibold text-slate-500">Inactivo</span>
+                    <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                        <span class="text-slate-500 block font-bold uppercase text-[10px]">Estatus Servidor:</span>
+                        <span id="log-status" class="font-bold text-slate-500">ESPERANDO ORIGEN</span>
                     </div>
                 </div>
             </div>
@@ -77,21 +99,21 @@
         </div>
     </main>
 
-    <footer class="bg-slate-950 text-center py-3 text-xs text-slate-600 border-t border-slate-800">
-        Control de Acceso Escolar Centralizado · Alojado en GitHub Pages de forma segura
+    <!-- PIE DE PÁGINA INSTITUCIONAL -->
+    <footer class="bg-slate-950 text-center py-3 text-xs text-slate-500 border-t border-slate-900 font-medium tracking-wide uppercase">
+        Departamento de Servicios Educativos · Innovación Tecnológica Escolar
     </footer>
 
     <script>
-        // Configuración Global del Escáner
         let html5QrcodeScanner = null;
         let bloqueado = false;
 
-        // Reloj en tiempo real
+        // Reloj local continuo
         setInterval(() => {
             document.getElementById('reloj-servidor').innerText = new Date().toLocaleTimeString();
         }, 1000);
 
-        // Captura de teclado manual
+        // Captura de ENTER en el teclado manual
         document.getElementById('input-manual').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') registrarManual();
         });
@@ -105,10 +127,10 @@
             }
         }
 
-        // FUNCIÓN OPTIMIZADA: Priorizar cámara trasera para control escolar
+        // Lógica de encendido optimizada para priorizar cámara trasera (Móvil)
         function forzarEncendidoCamara() {
             const alerta = document.getElementById("texto-alerta");
-            alerta.innerText = "Buscando cámara trasera del dispositivo...";
+            alerta.innerText = "Buscando periférico de video trasero...";
 
             if(html5QrcodeScanner) {
                 try { html5QrcodeScanner.clear(); } catch(e){}
@@ -122,7 +144,7 @@
                 aspectRatio: 1.0
             };
 
-            // ORDEN: Intentar arrancar con la cámara trasera (environment)
+            // Intentar con cámara trasera de forma nativa
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 config,
@@ -131,17 +153,16 @@
             )
             .then(() => {
                 document.getElementById("mensaje-carga").style.display = "none";
-                console.log("Cámara trasera iniciada con éxito");
             })
             .catch(err => {
-                console.warn("No se detectó cámara trasera, intentando frontal de respaldo...", err);
-                // RESPALDO: Si no hay cámara trasera (como en la Laptop), abre la frontal automáticamente
+                console.warn("Cámara trasera no disponible, activando frontal...", err);
+                // Respaldo inmediato para Laptop (Cámara Frontal)
                 html5QrcodeScanner.start({ facingMode: "user" }, config, onQrScanSuccess, onQrScanFailure)
                 .then(() => {
                     document.getElementById("mensaje-carga").style.display = "none";
                 })
                 .catch(error => {
-                    alerta.innerHTML = `<span class="text-red-400 block font-bold">Cámara Bloqueada</span><span class="text-xs text-slate-500">Active los permisos en el candado de la URL.</span>`;
+                    alerta.innerHTML = `<span class="text-red-400 block font-bold">Acceso Bloqueado</span><span class="text-xs text-slate-500">Por favor, otorgue permisos de cámara en la barra superior de navegación.</span>`;
                 });
             });
         }
@@ -153,11 +174,9 @@
             setTimeout(() => { resetearPantallaLector(); bloqueado = false; }, 4000);
         }
 
-        function onQrScanFailure(error) {
-            // Silencioso para optimizar rendimiento
-        }
+        function onQrScanFailure(error) {}
 
-        // Envío Real a Google Sheets
+        // Proceso de comunicación y cambio estético dinámico
         function procesarAsistenciaAlumno(matricula) {
             const panel = document.getElementById("panel-resultado");
             const icono = document.getElementById("estado-icono");
@@ -171,32 +190,43 @@
             const tipoEvento = (hora < 12) ? "ENTRADA" : "SALIDA";
             const horaBonita = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-            panel.className = "bg-emerald-950 p-5 rounded-xl border border-emerald-500 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300";
-            icono.innerText = "✅";
-            titulo.innerText = "¡PROCESANDO REGISTRO!";
-            titulo.className = "text-xl font-bold text-emerald-400";
-            detalle.innerHTML = `Matrícula: <strong class="font-mono text-white">${matricula}</strong><br>Detectado: <strong class="text-white">${tipoEvento}</strong> a las ${horaBonita}`;
+            // Cambiar pantalla a color de procesamiento (Azul Institucional temporal)
+            panel.className = "bg-blue-950 p-5 rounded-xl border border-blue-600 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300 shadow-inner";
+            icono.innerText = "⏳";
+            titulo.innerText = "PROCESANDO ACCESO";
+            titulo.className = "text-xl font-bold text-blue-400 uppercase tracking-wider";
+            detalle.innerHTML = `Matrícula: <strong class="font-mono text-white text-lg">${matricula}</strong><br>Registrando <strong class="text-white">${tipoEvento}</strong>...`;
 
-            logTelefono.innerText = "Conectando..."; 
-            logStatus.innerText = "ENVIANDO";
-            logStatus.className = "font-semibold text-amber-400";
+            logTelefono.innerText = "Buscando tutor..."; 
+            logStatus.innerText = "CONECTANDO API";
+            logStatus.className = "font-bold text-amber-500 uppercase animate-pulse";
 
-            fetch('https://script.google.com/macros/s/AKfycbwwt2rsyG0G0KKRk3FWJG3EdG6OK6hhG4U4u-OGSKybUsxGjEfEkwNIYBDkkK0ciJ-Y/exec', {
+            // TU URL ACTUALIZADA DE GOOGLE APPS SCRIPT
+            fetch('https://script.google.com/macros/s/AKfycbxOVSKjwfb6CDFVfTqMpW-6dcM8qBMLBQnJd8KuCNH-PRFlohr4XB9Ln6EBXkg0Kjh3/exec', {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
             })
             .then(() => {
-                titulo.innerText = "¡ASISTENCIA REGISTRADA!";
-                logTelefono.innerText = "Padre Notificado ✓"; 
-                logStatus.innerText = "ÉXITO EN HOJA";
-                logStatus.className = "font-semibold text-emerald-400";
+                // Al completarse, pasamos a color Éxito (Verde)
+                panel.className = "bg-emerald-950 p-5 rounded-xl border border-emerald-500 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300 shadow-inner";
+                icono.innerText = "✅";
+                titulo.innerText = "¡REGISTRO EXITOSO!";
+                titulo.className = "text-xl font-bold text-emerald-400 uppercase tracking-wider";
+                detalle.innerHTML = `Matrícula: <strong class="font-mono text-white">${matricula}</strong><br>Asistencia guardada a las ${horaBonita}`;
+                
+                logTelefono.innerText = "Correo disparado"; 
+                logStatus.innerText = "ÉXITO EN GOOGLE";
+                logStatus.className = "font-bold text-emerald-400 uppercase";
             })
             .catch(err => {
                 console.error(err);
-                logStatus.innerText = "ERROR DE RED";
-                logStatus.className = "font-semibold text-red-400";
+                panel.className = "bg-red-950 p-5 rounded-xl border border-red-500 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300 shadow-inner";
+                icono.innerText = "❌";
+                titulo.innerText = "ERROR DE CONEXIÓN";
+                logStatus.innerText = "FALLO DE RED";
+                logStatus.className = "font-bold text-red-500 uppercase";
             });
         }
 
@@ -206,14 +236,14 @@
             const titulo = document.getElementById("estado-titulo");
             const detalle = document.getElementById("estado-detalle");
 
-            panel.className = "bg-slate-950 p-5 rounded-xl border border-slate-700 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300";
+            panel.className = "bg-slate-950 p-5 rounded-xl border border-slate-800 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300 shadow-inner";
             icono.innerText = "🔲";
-            titulo.innerText = "Sistema Listo";
-            titulo.className = "text-lg font-bold text-slate-400";
-            detalle.innerText = "Presente una credencial para iniciar el registro diario.";
+            titulo.innerText = "Terminal en Espera";
+            titulo.className = "text-lg font-bold text-slate-400 uppercase tracking-wide";
+            detalle.innerText = "Presente una credencial con código QR frente al lente o use el teclado.";
         }
 
-        // Intentar arranque automático al cargar, si falla queda el botón manual listo
+        // Arranque automático al abrir el navegador
         window.onload = forzarEncendidoCamara;
     </script>
 </body>
