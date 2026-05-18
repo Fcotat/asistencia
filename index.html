@@ -11,34 +11,46 @@
 
     <header class="bg-slate-800 border-b border-slate-700 text-center py-4 shadow-lg">
         <h1 class="text-xl font-bold tracking-wider text-blue-400">ESTACIÓN DE CONTROL DE ASISTENCIA</h1>
-        <p class="text-xs text-slate-400 mt-1">Departamento de Servicios Educativos | Dispositivo Fijo</p>
+        <p class="text-xs text-slate-400 mt-1">Departamento de Servicios Educativos | Modo Dual</p>
     </header>
 
     <main class="flex-grow flex flex-col md:flex-row items-center justify-center p-6 gap-6 max-w-6xl mx-auto w-full">
         
+        <!-- PANEL DE CONTROL (CÁMARA Y TECLADO) -->
         <div class="bg-slate-800 p-4 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 flex flex-col items-center">
             <div class="w-full text-center mb-3">
                 <h2 class="text-md font-semibold text-slate-300 flex items-center justify-center gap-2">
                     <span class="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                    Cámara del Dispositivo
+                    Ingreso de Matrícula
                 </h2>
-                <p class="text-xs text-slate-500">Muestre el código QR de la credencial frente al lente</p>
+                <p class="text-xs text-slate-500">Use la cámara o escriba manualmente abajo</p>
             </div>
             
-            <div id="lector-qr" class="w-full overflow-hidden rounded-xl bg-slate-950 border-2 border-dashed border-slate-700 aspect-square flex items-center justify-center relative">
+            <!-- Contenedor del Escáner -->
+            <div id="lector-qr" class="w-full overflow-hidden rounded-xl bg-slate-950 border-2 border-dashed border-slate-700 aspect-square flex items-center justify-center relative mb-4">
                 <div id="mensaje-carga" class="text-center p-4 z-10">
                     <span class="text-4xl block mb-2">📷</span>
-                    <p class="text-sm text-slate-400 font-medium">Esperando permisos de la cámara...</p>
+                    <p class="text-sm text-slate-400 font-medium">Esperando permisos / Usar teclado alterno</p>
+                </div>
+            </div>
+
+            <!-- CUADRO DE ENTRADA MANUAL (Para pruebas sin cámara) -->
+            <div class="w-full bg-slate-900 p-3 rounded-xl border border-slate-700">
+                <label class="block text-xs text-slate-400 mb-1 font-medium">¿Fallo de cámara? Digite Matrícula:</label>
+                <div class="flex gap-2">
+                    <input type="text" id="input-manual" placeholder="Ej: TEST-123" class="bg-slate-950 border border-slate-700 rounded px-3 py-1.5 text-sm font-mono text-blue-400 flex-grow focus:outline-none focus:border-blue-500">
+                    <button onclick="registrarManual()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-semibold uppercase tracking-wider transition-colors">Enviar</button>
                 </div>
             </div>
         </div>
 
-        <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 h-[450px] flex flex-col justify-between">
+        <!-- PANEL DE RESULTADOS -->
+        <div class="bg-slate-800 p-6 rounded-2xl shadow-2xl border border-slate-700 w-full md:w-1/2 h-[520px] flex flex-col justify-between">
             
             <div id="panel-resultado" class="bg-slate-950 p-5 rounded-xl border border-slate-700 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300">
                 <div id="estado-icono" class="text-5xl mb-3">🔲</div>
                 <h3 id="estado-titulo" class="text-lg font-bold text-slate-400">Sistema Listo</h3>
-                <p id="estado-detalle" class="text-sm text-slate-500 mt-1 text-balance">Presente una credencial para iniciar el registro diario.</p>
+                <p id="estado-detalle" class="text-sm text-slate-500 mt-1 text-balance">Presente credencial o capture matrícula para registrar diario.</p>
             </div>
 
             <div class="mt-4 pt-4 border-t border-slate-700 flex flex-col gap-2">
@@ -66,82 +78,57 @@
     </footer>
 
     <script>
-        // Actualizar reloj del sistema en tiempo real
+        // Reloj en tiempo real
         setInterval(() => {
             document.getElementById('reloj-servidor').innerText = new Date().toLocaleTimeString();
         }, 1000);
 
-        // Configuración e inicio del escáner con compatibilidad total
-        function inicializarEscaner() {
-            const html5QrcodeScanner = new Html5Qrcode("lector-qr");
-            
-            const config = { 
-                fps: 15, 
-                qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    var minEdgePercentage = 0.7;
-                    var minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                    var qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-                    return { width: qrboxSize, height: qrboxSize };
-                }
-            };
+        // Captura del evento Enter en el teclado
+        document.getElementById('input-manual').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                registrarManual();
+            }
+        });
 
-            // Intentar inicializar pidiendo los dispositivos disponibles
-            Html5Qrcode.getCameras().then(devices => {
-                if (devices && devices.length > 0) {
-                    // Arranca con la primera cámara encontrada
-                    html5QrcodeScanner.start(
-                        { deviceId: { exact: devices[0].id } },
-                        config,
-                        onQrScanSuccess,
-                        onQrScanFailure
-                    ).then(() => {
-                        document.getElementById("mensaje-carga").style.display = "none";
-                    }).catch(err => {
-                        // Respaldo genérico si falla el ID exacto
-                        html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
-                                         .then(() => document.getElementById("mensaje-carga").style.display = "none");
-                    });
-                } else {
-                    // Respaldo inmediato si getCameras regresa vacío (común en ciertos navegadores móviles)
-                    html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
-                                     .then(() => document.getElementById("mensaje-carga").style.display = "none")
-                                     .catch(() => {
-                                         document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>No se detectaron cámaras accesibles.</p>";
-                                     });
-                }
-            }).catch(err => {
-                // Último intento directo por si las promesas de enumeración son bloqueadas
-                html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
-                                 .then(() => document.getElementById("mensaje-carga").style.display = "none")
-                                 .catch(error => {
-                                     document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>Error de permisos o hardware.</p>";
-                                 });
-            });
+        function registrarManual() {
+            const campo = document.getElementById('input-manual');
+            const valor = campo.value.trim().toUpperCase();
+            if (valor !== "") {
+                procesarAsistenciaAlumno(valor);
+                campo.value = ""; // Limpiar el cuadro
+            }
         }
 
-        // Variable de bloqueo para evitar lecturas consecutivas del mismo alumno
+        // Intento de inicio de escáner seguro
+        function inicializarEscaner() {
+            try {
+                const html5QrcodeScanner = new Html5Qrcode("lector-qr");
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                Html5Qrcode.getCameras().then(devices => {
+                    if (devices && devices.length > 0) {
+                        html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
+                            .then(() => document.getElementById("mensaje-carga").style.display = "none")
+                            .catch(() => console.log("Cámara bloqueada por políticas del navegador"));
+                    }
+                }).catch(() => console.log("No se otorgaron permisos de hardware"));
+            } catch (e) {
+                console.log("Lector QR no soportado en este entorno");
+            }
+        }
+
         let bloqueado = false;
 
-        // Qué pasa cuando el software detecta un código QR
         function onQrScanSuccess(decodedText, decodedResult) {
             if (bloqueado) return; 
             bloqueado = true;
-
-            const matriculaDetectada = decodedText.trim().toUpperCase();
-            procesarAsistenciaAlumno(matriculaDetectada);
-
-            // Volver a habilitar la cámara para el siguiente alumno tras 4 segundos
-            setTimeout(() => {
-                resetearPantallaLector();
-                bloqueado = false;
-            }, 4000);
+            procesarAsistenciaAlumno(decodedText.trim().toUpperCase());
+            setTimeout(() => { resetearPantallaLector(); bloqueado = false; }, 4000);
         }
 
-        function onQrScanFailure(error) {
-            // Silencioso para optimizar rendimiento
-        }
+        function onQrScanFailure(error) {}
 
-        // Conclusión de red y guardado en Google Sheets
+        // Envío Real a Google Sheets
         function procesarAsistenciaAlumno(matricula) {
             const panel = document.getElementById("panel-resultado");
             const icono = document.getElementById("estado-icono");
@@ -155,33 +142,32 @@
             const tipoEvento = (hora < 12) ? "ENTRADA" : "SALIDA";
             const horaBonita = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+            // Interfaz en Éxito Temporal
             panel.className = "bg-emerald-950 p-5 rounded-xl border border-emerald-500 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300";
             icono.innerText = "✅";
-            titulo.innerText = "¡ASISTENCIA REGISTRADA!";
+            titulo.innerText = "¡PROCESANDO REGISTRO!";
             titulo.className = "text-xl font-bold text-emerald-400";
-            detalle.innerHTML = `Matrícula: <strong class="font-mono text-white">${matricula}</strong><br>Acceso: <strong class="text-white">${tipoEvento}</strong> a las ${horaBonita}`;
+            detalle.innerHTML = `Matrícula: <strong class="font-mono text-white">${matricula}</strong><br>Detectado: <strong class="text-white">${tipoEvento}</strong> a las ${horaBonita}`;
 
-            logTelefono.innerText = "Buscando Servidor..."; 
-            logStatus.innerText = "PROCESANDO";
+            logTelefono.innerText = "Conectando..."; 
+            logStatus.innerText = "ENVIANDO";
             logStatus.className = "font-semibold text-amber-400";
 
-            // Enlace real corregido con sus respectivas comillas
+            // Petición a tu Google Apps Script real
             fetch('https://script.google.com/macros/s/AKfycbxOVSKjwfb6CDFVfTqMpW-6dcM8qBMLBQnJd8KuCNH-PRFlohr4XB9Ln6EBXkg0Kjh3/exec', {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
             })
             .then(() => {
-                console.log('Datos enviados correctamente a Google Sheets');
-                logTelefono.innerText = "Padre Registrado ✓"; 
-                logStatus.innerText = "ENVIADO A SCRIPT";
+                titulo.innerText = "¡ASISTENCIA REGISTRADA!";
+                logTelefono.innerText = "Padre Notificado ✓"; 
+                logStatus.innerText = "ÉXITO EN HOJA";
                 logStatus.className = "font-semibold text-emerald-400";
             })
             .catch(err => {
-                console.error('Error al enviar:', err);
+                console.error(err);
                 logStatus.innerText = "ERROR DE RED";
                 logStatus.className = "font-semibold text-red-400";
             });
