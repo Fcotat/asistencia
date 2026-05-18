@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lector de Credenciales QR - Servicios Educativos</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" integrity="sha512-r6rDA7W6ZeQhvl8OH7mwwBUqZf0w6mmI7umIYkyEa24zCiFiw5vS3RMtO0pdQaIt3wUa1G4wEX6S16V7w64f9Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" integrity="sha512-r6rDA7W6ZeQhvl8OH7mwwBUqZf0w6mmI7umIYkyEa24zCiFiw5vS3RMtO0pdQaIt3wUa1G4wEX6S16V7w64f9Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col justify-between">
 
@@ -72,13 +71,10 @@
             document.getElementById('reloj-servidor').innerText = new Date().toLocaleTimeString();
         }, 1000);
 
-        // Configuración e inicio del escáner de QR
-       // Configuración e inicio del escáner con compatibilidad total
+        // Configuración e inicio del escáner con compatibilidad total
         function inicializarEscaner() {
-            // Crear el lector en el contenedor
             const html5QrcodeScanner = new Html5Qrcode("lector-qr");
             
-            // Configuración abierta para pantallas de todo tipo
             const config = { 
                 fps: 15, 
                 qrbox: function(viewfinderWidth, viewfinderHeight) {
@@ -89,10 +85,10 @@
                 }
             };
 
-            // Pedir al navegador que use la cámara por defecto que encuentre (frontal o trasera)
+            // Intentar inicializar pidiendo los dispositivos disponibles
             Html5Qrcode.getCameras().then(devices => {
                 if (devices && devices.length > 0) {
-                    // Si encuentra cámaras, arranca con la primera que tenga disponible
+                    // Arranca con la primera cámara encontrada
                     html5QrcodeScanner.start(
                         { deviceId: { exact: devices[0].id } },
                         config,
@@ -101,16 +97,25 @@
                     ).then(() => {
                         document.getElementById("mensaje-carga").style.display = "none";
                     }).catch(err => {
-                        // Intento de respaldo si el ID exacto falla
-                        html5QrcodeScanner.start({ facingMode: "user" }, config, onQrScanSuccess, onQrScanFailure)
+                        // Respaldo genérico si falla el ID exacto
+                        html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
                                          .then(() => document.getElementById("mensaje-carga").style.display = "none");
                     });
                 } else {
-                    document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>No se detectaron cámaras fijas.</p>";
+                    // Respaldo inmediato si getCameras regresa vacío (común en ciertos navegadores móviles)
+                    html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
+                                     .then(() => document.getElementById("mensaje-carga").style.display = "none")
+                                     .catch(() => {
+                                         document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>No se detectaron cámaras accesibles.</p>";
+                                     });
                 }
             }).catch(err => {
-              alert("Error de cámara: " + err);
-                document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>Error de permisos o SSL en el sitio.</p>";
+                // Último intento directo por si las promesas de enumeración son bloqueadas
+                html5QrcodeScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, onQrScanFailure)
+                                 .then(() => document.getElementById("mensaje-carga").style.display = "none")
+                                 .catch(error => {
+                                     document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>Error de permisos o hardware.</p>";
+                                 });
             });
         }
 
@@ -122,12 +127,10 @@
             if (bloqueado) return; 
             bloqueado = true;
 
-            // Extraemos el texto limpio del QR (Matrícula)
             const matriculaDetectada = decodedText.trim().toUpperCase();
-            
             procesarAsistenciaAlumno(matriculaDetectada);
 
-            // Volver a habilitar la cámara para el siguiente alumno en la fila tras 4 segundos
+            // Volver a habilitar la cámara para el siguiente alumno tras 4 segundos
             setTimeout(() => {
                 resetearPantallaLector();
                 bloqueado = false;
@@ -135,10 +138,10 @@
         }
 
         function onQrScanFailure(error) {
-            // Se deja vacío de manera intencional para no alentar el navegador con registros innecesarios
+            // Silencioso para optimizar rendimiento
         }
 
-        // Simulación de conexión a base de datos y mensajería
+        // Conclusión de red y guardado en Google Sheets
         function procesarAsistenciaAlumno(matricula) {
             const panel = document.getElementById("panel-resultado");
             const icono = document.getElementById("estado-icono");
@@ -148,35 +151,42 @@
             const logTelefono = document.getElementById("log-telefono");
             const logStatus = document.getElementById("log-status");
 
-            // Define automáticamente si es Entrada o Salida según la hora (Antes de las 12 PM = Entrada)
             const hora = new Date().getHours();
             const tipoEvento = (hora < 12) ? "ENTRADA" : "SALIDA";
             const horaBonita = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-            // CAMBIO VISUAL DE ÉXITO: El panel se vuelve verde brillante e informa al operador
             panel.className = "bg-emerald-950 p-5 rounded-xl border border-emerald-500 text-center flex-grow flex flex-col items-center justify-center transition-all duration-300";
             icono.innerText = "✅";
             titulo.innerText = "¡ASISTENCIA REGISTRADA!";
             titulo.className = "text-xl font-bold text-emerald-400";
             detalle.innerHTML = `Matrícula: <strong class="font-mono text-white">${matricula}</strong><br>Acceso: <strong class="text-white">${tipoEvento}</strong> a las ${horaBonita}`;
 
-            // Simulación de la respuesta de red (Encontró al papá y mandó la alerta)
-            logTelefono.innerText = "Padre Registrado ✓"; 
-            logStatus.innerText = "SMS/WA ENVIADO";
-            logStatus.className = "font-semibold text-emerald-400";
+            logTelefono.innerText = "Buscando Servidor..."; 
+            logStatus.innerText = "PROCESANDO";
+            logStatus.className = "font-semibold text-amber-400";
 
-           // Envío de datos real a Google Sheets
-   fetch(https://script.google.com/macros/s/AKfycbxOVSKjwfb6CDFVfTqMpW-6dcM8qBMLBQnJd8KuCNH-PRFlohr4XB9Ln6EBXkg0Kjh3/exec, {
-       method: 'POST',
-       mode: 'no-cors',
-       text: 'application/json',
-       body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
-   })
-   .then(() => console.log('Datos enviados correctamente a Google Sheets'))
-   .catch(err => console.error('Error al enviar:', err));
+            // Enlace real corregido con sus respectivas comillas
+            fetch('https://script.google.com/macros/s/AKfycbxOVSKjwfb6CDFVfTqMpW-6dcM8qBMLBQnJd8KuCNH-PRFlohr4XB9Ln6EBXkg0Kjh3/exec', {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
+            })
+            .then(() => {
+                console.log('Datos enviados correctamente a Google Sheets');
+                logTelefono.innerText = "Padre Registrado ✓"; 
+                logStatus.innerText = "ENVIADO A SCRIPT";
+                logStatus.className = "font-semibold text-emerald-400";
+            })
+            .catch(err => {
+                console.error('Error al enviar:', err);
+                logStatus.innerText = "ERROR DE RED";
+                logStatus.className = "font-semibold text-red-400";
+            });
         }
 
-        // Regresar el panel al estado de espera original
         function resetearPantallaLector() {
             const panel = document.getElementById("panel-resultado");
             const icono = document.getElementById("estado-icono");
@@ -190,7 +200,6 @@
             detalle.innerText = "Presente una credencial para iniciar el registro diario.";
         }
 
-        // Arrancar la lógica al terminar de cargar el HTML
         window.onload = inicializarEscaner;
     </script>
 </body>
