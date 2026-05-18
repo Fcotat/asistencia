@@ -73,26 +73,44 @@
         }, 1000);
 
         // Configuración e inicio del escáner de QR
+       // Configuración e inicio del escáner con compatibilidad total
         function inicializarEscaner() {
+            // Crear el lector en el contenedor
             const html5QrcodeScanner = new Html5Qrcode("lector-qr");
             
-            // Configuración del lector (250px la caja de enfoque central, 10 cuadros de procesamiento por segundo)
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            // Configuración abierta para pantallas de todo tipo
+            const config = { 
+                fps: 15, 
+                qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    var minEdgePercentage = 0.7;
+                    var minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                    var qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                    return { width: qrboxSize, height: qrboxSize };
+                }
+            };
 
-            // Iniciar la cámara. Usa "environment" para la cámara trasera o "user" si usas la cámara frontal de una tableta.
-            html5QrcodeScanner.start(
-                { facingMode: "environment" }, 
-                config,
-                onQrScanSuccess,
-                onQrScanFailure
-            ).then(() => {
-                document.getElementById("mensaje-carga").style.display = "none";
+            // Pedir al navegador que use la cámara por defecto que encuentre (frontal o trasera)
+            Html5Qrcode.getCameras().then(devices => {
+                if (devices && devices.length > 0) {
+                    // Si encuentra cámaras, arranca con la primera que tenga disponible
+                    html5QrcodeScanner.start(
+                        { deviceId: { exact: devices[0].id } },
+                        config,
+                        onQrScanSuccess,
+                        onQrScanFailure
+                    ).then(() => {
+                        document.getElementById("mensaje-carga").style.display = "none";
+                    }).catch(err => {
+                        // Intento de respaldo si el ID exacto falla
+                        html5QrcodeScanner.start({ facingMode: "user" }, config, onQrScanSuccess, onQrScanFailure)
+                                         .then(() => document.getElementById("mensaje-carga").style.display = "none");
+                    });
+                } else {
+                    document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>No se detectaron cámaras fijas.</p>";
+                }
             }).catch(err => {
-                console.error("Error al iniciar la cámara:", err);
-                document.getElementById("mensaje-carga").innerHTML = `
-                    <span class="text-red-500 text-3xl block mb-2">⚠️</span>
-                    <p class="text-xs text-red-400">Error de cámara o permisos denegados.</p>
-                `;
+                console.error("Error global de cámaras:", err);
+                document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>Error de permisos o SSL en el sitio.</p>";
             });
         }
 
