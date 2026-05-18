@@ -146,13 +146,15 @@
             logStatus.innerText = "SMS/WA ENVIADO";
             logStatus.className = "font-semibold text-emerald-400";
 
-            // AQUÍ EN LA FASE SIGUIENTE: Conectarás este gatillo a tu backend real con un fetch
-            /*
-            fetch('https://tu-servidor.com/asistencia', {
-                method: 'POST',
-                body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
-            });
-            */
+           // Envío de datos real a Google Sheets
+   fetch(https://script.google.com/macros/s/AKfycbxOVSKjwfb6CDFVfTqMpW-6dcM8qBMLBQnJd8KuCNH-PRFlohr4XB9Ln6EBXkg0Kjh3/exec, {
+       method: 'POST',
+       mode: 'no-cors',
+       text: 'application/json',
+       body: JSON.stringify({ matricula: matricula, evento: tipoEvento })
+   })
+   .then(() => console.log('Datos enviados correctamente a Google Sheets'))
+   .catch(err => console.error('Error al enviar:', err));
         }
 
         // Regresar el panel al estado de espera original
