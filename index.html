@@ -109,7 +109,7 @@
                     document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>No se detectaron cámaras fijas.</p>";
                 }
             }).catch(err => {
-                console.error("Error global de cámaras:", err);
+              alert("Error de cámara: " + err);
                 document.getElementById("mensaje-carga").innerHTML = "<p class='text-xs text-red-400'>Error de permisos o SSL en el sitio.</p>";
             });
         }
